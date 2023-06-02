@@ -1,0 +1,129 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build_linux:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      matrix:
+        config: [ Debug, Release ]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: |
+        # Install CMake
+        sudo apt-get update
+        # Install OpenGL dependencies
+        sudo apt-get install cmake  build-essential libeigen3-dev
+    - name: Configure
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DBUILD_TESTS:BOOL=ON -DBUILD_PYTHON:BOOL=OFF -DBUILD_SHARED_LIBS:BOOL=ON
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+
+    - name: Build
+      working-directory: ./build
+      run: |
+        cmake --build . 
+    - name: Test
+      run: |
+        cd build
+        ctest
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+
+  build_windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        config: [ Debug, Release ]
+    env:
+      buildDir: '${{ github.workspace }}\build\'
+      vcpkgDir: '${{ github.workspace }}\..\vcpkg'
+      # commit for version 2023.04.15
+      COMMIT_ID: 501db0f17ef6df184fcdbfbe0f87cde2313b6ab1
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Install latest CMake.
+      uses: lukka/get-cmake@latest
+
+    # Restore from cache the previously built ports. If a "cache miss" occurs, then vcpkg is bootstrapped. Since a the vcpkg.json is being used later on to install the packages when run-cmake runs, no packages are installed at this time and the input 'setupOnly:true' is mandatory.
+    - name: vcpkg - Setup dependencies
+      uses: lukka/run-vcpkg@v7
+      with:
+        # Just install vcpkg for now, do not install any ports in this step yet.
+        setupOnly: false
+        # Location of the vcpkg submodule in the Git repository.
+        vcpkgDirectory: ${{ env.vcpkgDir }}
+        vcpkgGitCommitId: ${{ env.COMMIT_ID }}
+        vcpkgArguments: eigen3
+        vcpkgTriplet: x64-windows
+        # doNotCache: true
+        # This is used to unbreak cached artifacts if for some reason dependencies fail to build,
+        # the action does not notice it and saves broken artifacts.
+        appendedCacheKey: cache011
+
+    - name: vcpkg - Display installed packages
+      run:
+          ${{ env.vcpkgDir }}\vcpkg.exe list
+
+    - name: Build
+      uses: lukka/run-cmake@v3
+      with:
+        cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
+        cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
+        buildDirectory: ${{ env.buildDir }}
+        cmakeGenerator: Ninja
+        cmakeAppendedArgs: -DBUILD_TESTS:BOOL=ON -DBUILD_PYTHON:BOOL=OFF -DBUILD_SHARED_LIBS:BOOL=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DVCPKG_TARGET_TRIPLET=x64-windows -A x64 -T host=x64
+        # This input tells run-cmake to consume the vcpkg.cmake toolchain file set by run-vcpkg.
+        cmakeBuildType: ${{ matrix.config }}
+        useVcpkgToolchainFile: true
+        buildWithCMake: true
+        buildWithCMakeArgs: -j1 --config ${{ matrix.config }}
+
+    - name: UnitTests
+      uses: lukka/run-cmake@v3
+      with:
+        cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
+        cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
+        buildDirectory: ${{ env.buildDir }}
+        cmakeAppendedArgs: -DBUILD_TESTS:BOOL=ON -DBUILD_PYTHON:BOOL=OFF -DBUILD_SHARED_LIBS:BOOL=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DVCPKG_TARGET_TRIPLET=x64-windows -A x64 -T host=x64
+        buildWithCMakeArgs: --target RUN_TESTS --config ${{ matrix.config }}
+        # This input tells run-cmake to consume the vcpkg.cmake toolchain file set by run-vcpkg.
+        cmakeBuildType: ${{ matrix.config }}
+        useVcpkgToolchainFile: true
+        buildWithCMake: true
+
+# glm on homebrew is broken when loading the cmake
+  build_macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        # Install Homebrew
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+        # Install CMake and  dependencies
+        export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK="ON"
+        brew install cmake eigen
+    - name: Build
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS:BOOL=ON -DBUILD_PYTHON:BOOL=OFF -DBUILD_SHARED_LIBS:BOOL=ON
+        cmake --build . $(nproc)
+    - name: Test
+      run: |
+        cd build
+        ctest
