@@ -181,7 +181,7 @@ add_library( random_generators test/random_generators.cpp test/random_generators
 set_target_properties( opengv random_generators PROPERTIES
                     SOVERSION ${PROJECT_VERSION}
                     VERSION ${PROJECT_VERSION}
-                    CXX_STANDARD 11
+                    CXX_STANDARD 14
                     CXX_STANDARD_REQUIRED ON
                     DEBUG_POSTFIX d )
 
@@ -329,7 +329,7 @@ IF (BUILD_TESTS)
     test_Sturm
 
     PROPERTIES
-    CXX_STANDARD 11
+    CXX_STANDARD 14
     CXX_STANDARD_REQUIRED ON
     DEBUG_POSTFIX d )
 

@@ -38,6 +38,7 @@
 #define OPENGV_TYPES_HPP_
 
 #include <stdlib.h>
+#include <cassert>
 #include <vector>
 #include <Eigen/Eigen>
 #include <Eigen/src/Core/util/DisableStupidWarnings.h>
