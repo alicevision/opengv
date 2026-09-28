@@ -29,8 +29,8 @@
  ******************************************************************************/
 
 
-#include <Eigen/NonLinearOptimization>
-#include <Eigen/NumericalDiff>
+#include <unsupported/Eigen/NonLinearOptimization>
+#include <unsupported/Eigen/NumericalDiff>
 
 #include <opengv/absolute_pose/modules/main.hpp>
 #include <opengv/absolute_pose/modules/gp3p/modules.hpp>

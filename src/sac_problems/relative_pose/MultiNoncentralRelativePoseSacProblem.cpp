@@ -33,8 +33,8 @@
 
 #include <opengv/relative_pose/methods.hpp>
 #include <opengv/triangulation/methods.hpp>
-#include <Eigen/NonLinearOptimization>
-#include <Eigen/NumericalDiff>
+#include <unsupported/Eigen/NonLinearOptimization>
+#include <unsupported/Eigen/NumericalDiff>
 
 #include <opengv/sac_problems/relative_pose/CentralRelativePoseSacProblem.hpp>
 

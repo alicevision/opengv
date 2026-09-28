@@ -9,7 +9,9 @@ project(opengv VERSION 1.0 LANGUAGES CXX)
 #  RelWithDebInfo (CMAKE_C_FLAGS_RELWITHDEBINFO or CMAKE_CXX_FLAGS_RELWITHDEBINFO)
 #  MinSizeRel (CMAKE_C_FLAGS_MINSIZEREL or CMAKE_CXX_FLAGS_MINSIZEREL)
 
-set(CMAKE_BUILD_TYPE Release)
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
 
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
@@ -25,6 +27,9 @@ ELSE()
   OPTION(BUILD_SHARED_LIBS "Build shared libraries" OFF)
   OPTION(BUILD_POSITION_INDEPENDENT_CODE "Build position independent code (-fPIC)" ON)
 ENDIF()
+
+set(CMAKE_CXX_STANDARD 14 CACHE STRING "The C++ standard used by the project")
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 IF(MSVC)
   add_compile_options(/wd4514 /wd4267 /bigobj)
@@ -46,8 +51,7 @@ IF(BUILD_POSITION_INDEPENDENT_CODE)
 ENDIF()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/modules/")
-find_package(Eigen REQUIRED)
-set(ADDITIONAL_INCLUDE_DIRS ${EIGEN_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIR}/unsupported)
+find_package(Eigen3 REQUIRED NO_MODULE)
 
 set( OPENGV_SOURCE_FILES
   src/absolute_pose/modules/main.cpp
@@ -173,24 +177,20 @@ add_library( random_generators test/random_generators.cpp test/random_generators
 set_target_properties( opengv random_generators PROPERTIES
                     SOVERSION ${PROJECT_VERSION}
                     VERSION ${PROJECT_VERSION}
-                    CXX_STANDARD 14
-                    CXX_STANDARD_REQUIRED ON
                     DEBUG_POSTFIX d )
 
 target_include_directories( opengv PUBLIC 
                 # only when building from the source tree
                 $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
                 # only when using the lib from the install path
-                $<INSTALL_INTERFACE:include>
-                ${ADDITIONAL_INCLUDE_DIRS} )
+                $<INSTALL_INTERFACE:include> )
 
-target_include_directories( random_generators PRIVATE ${ADDITIONAL_INCLUDE_DIRS} )
+target_link_libraries( opengv PUBLIC Eigen3::Eigen )
 
 target_link_libraries( random_generators opengv )
 
 IF (BUILD_TESTS)
   enable_testing()
-  include_directories( ${ADDITIONAL_INCLUDE_DIRS} )
 
   add_executable( test_absolute_pose test/test_absolute_pose.cpp )
   target_link_libraries( test_absolute_pose opengv random_generators )
@@ -321,8 +321,6 @@ IF (BUILD_TESTS)
     test_Sturm
 
     PROPERTIES
-    CXX_STANDARD 14
-    CXX_STANDARD_REQUIRED ON
     DEBUG_POSTFIX d )
 
 
