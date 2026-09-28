@@ -30,8 +30,8 @@
 
 
 #include <opengv/relative_pose/modules/fivept_nister/modules.hpp>
-#include <Eigen/NonLinearOptimization>
-#include <Eigen/NumericalDiff>
+#include <unsupported/Eigen/NonLinearOptimization>
+#include <unsupported/Eigen/NumericalDiff>
 
 #include <opengv/OptimizationFunctor.hpp>
 

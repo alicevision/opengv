@@ -32,8 +32,8 @@
 #include <opengv/relative_pose/methods.hpp>
 #include <opengv/Indices.hpp>
 
-#include <Eigen/NonLinearOptimization>
-#include <Eigen/NumericalDiff>
+#include <unsupported/Eigen/NonLinearOptimization>
+#include <unsupported/Eigen/NumericalDiff>
 
 #include <opengv/OptimizationFunctor.hpp>
 #include <opengv/math/arun.hpp>
